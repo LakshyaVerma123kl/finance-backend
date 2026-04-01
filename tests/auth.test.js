@@ -1,12 +1,20 @@
-const request = require("supertest");
-const app = require("../src/app");
-const { initializeDatabase } = require("../src/models/index");
-
-// Use a test DB
+// Must be set before any module that touches the DB or JWT is imported
 process.env.DB_PATH = ":memory:";
+process.env.JWT_SECRET = "test-secret-key";
+process.env.JWT_EXPIRES_IN = "1d";
+
+const request = require("supertest");
+const { resetDb } = require("../src/config/database");
+const { initializeDatabase } = require("../src/models/index");
+const app = require("../src/app");
 
 beforeAll(() => {
+  resetDb();          // ensure a fresh in-memory DB for this suite
   initializeDatabase();
+});
+
+afterAll(() => {
+  resetDb();
 });
 
 describe("Auth Endpoints", () => {

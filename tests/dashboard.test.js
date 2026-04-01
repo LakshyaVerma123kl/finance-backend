@@ -1,40 +1,37 @@
-const request = require("supertest");
-const app = require("../src/app");
-const { initializeDatabase } = require("../src/models/index");
-
 process.env.DB_PATH = ":memory:";
-beforeAll(() => {
-  initializeDatabase();
-});
+process.env.JWT_SECRET = "test-secret-key";
+process.env.JWT_EXPIRES_IN = "1d";
+
+const request = require("supertest");
+const { resetDb } = require("../src/config/database");
+const { initializeDatabase } = require("../src/models/index");
+const app = require("../src/app");
 
 let token;
 
 beforeAll(async () => {
+  resetDb();
+  initializeDatabase();
+
   const res = await request(app)
     .post("/api/auth/login")
     .send({ email: "admin@finance.com", password: "Admin@123" });
   token = res.body.token;
 
-  // Seed some data
   const headers = { Authorization: `Bearer ${token}` };
   await request(app).post("/api/records").set(headers).send({
-    amount: 5000,
-    type: "income",
-    category: "Salary",
-    date: "2025-01-10",
+    amount: 5000, type: "income", category: "Salary", date: "2025-01-10",
   });
   await request(app).post("/api/records").set(headers).send({
-    amount: 800,
-    type: "expense",
-    category: "Rent",
-    date: "2025-01-15",
+    amount: 800, type: "expense", category: "Rent", date: "2025-01-15",
   });
   await request(app).post("/api/records").set(headers).send({
-    amount: 200,
-    type: "expense",
-    category: "Food",
-    date: "2025-01-20",
+    amount: 200, type: "expense", category: "Food", date: "2025-01-20",
   });
+});
+
+afterAll(() => {
+  resetDb();
 });
 
 describe("Dashboard Endpoints", () => {

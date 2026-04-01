@@ -1,15 +1,18 @@
-const request = require("supertest");
-const app = require("../src/app");
-const { initializeDatabase } = require("../src/models/index");
-
 process.env.DB_PATH = ":memory:";
-beforeAll(() => {
-  initializeDatabase();
-});
+process.env.JWT_SECRET = "test-secret-key";
+process.env.JWT_EXPIRES_IN = "1d";
+
+const request = require("supertest");
+const { resetDb } = require("../src/config/database");
+const { initializeDatabase } = require("../src/models/index");
+const app = require("../src/app");
 
 let adminToken, viewerToken;
 
 beforeAll(async () => {
+  resetDb();
+  initializeDatabase();
+
   const adminLogin = await request(app)
     .post("/api/auth/login")
     .send({ email: "admin@finance.com", password: "Admin@123" });
@@ -25,6 +28,10 @@ beforeAll(async () => {
     .post("/api/auth/login")
     .send({ email: "viewer@test.com", password: "pass1234" });
   viewerToken = viewerLogin.body.token;
+});
+
+afterAll(() => {
+  resetDb();
 });
 
 describe("Financial Records", () => {

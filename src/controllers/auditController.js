@@ -20,18 +20,16 @@ function listLogs(req, res) {
     params.push(entity);
   }
 
-  const total = db
-    .prepare(query.replace("SELECT *", "SELECT COUNT(*) as count"))
-    .get(...params).count;
+  const countQuery = query.replace("SELECT *", "SELECT COUNT(*) as count");
+  const total = db.prepare(countQuery).get(params).count;
 
   const offset = (parseInt(page) - 1) * parseInt(limit);
   query += ` ORDER BY created_at DESC LIMIT ? OFFSET ?`;
-  params.push(parseInt(limit), offset);
 
-  const logs = db.prepare(query).all(...params);
+  const rows = db.prepare(query).all([...params, parseInt(limit), offset]);
 
   return res.json({
-    audit_logs: logs,
+    audit_logs: rows,
     meta: {
       total,
       page: +page,
