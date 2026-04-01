@@ -520,7 +520,7 @@
 <div id="toast"></div>
 
 <script>
-const API = 'http://localhost:3000' || 'https://finance-backend-znin.onrender.com';
+const API = process.env.API_URL || 'https://finance-backend-znin.onrender.com';
 let token = localStorage.getItem('fin_token');
 let currentUser = null;
 let currentPage = 'overview';
