@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Finance Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #0c0e14;
+    --surface:  #13161f;
+    --border:   #1e2230;
+    --muted:    #3a3f52;
+    --text:     #d8dce8;
+    --subtle:   #6b7390;
+    --accent:   #6ee7b7;
+    --red:      #f87171;
+    --amber:    #fbbf24;
+    --blue:     #60a5fa;
+    --purple:   #a78bfa;
+    --font-ui:  'Syne', sans-serif;
+    --font-mono:'DM Mono', monospace;
+    --radius:   10px;
+  }
+
+  html, body { height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-ui);
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ── Layout ───────────────────────────────────── */
+  #app { display: flex; min-height: 100vh; }
+
+  #sidebar {
+    width: 220px;
+    min-height: 100vh;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 28px 0;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    z-index: 10;
+  }
+
+  .logo {
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    padding: 0 24px 28px;
+    border-bottom: 1px solid var(--border);
+    color: #fff;
+  }
+  .logo span { color: var(--accent); }
+
+  nav { padding: 20px 0; flex: 1; }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 24px;
+    cursor: pointer;
+    color: var(--subtle);
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.3px;
+    border-left: 3px solid transparent;
+    transition: all .15s;
+  }
+  .nav-item:hover { color: var(--text); background: rgba(255,255,255,.03); }
+  .nav-item.active { color: var(--accent); border-left-color: var(--accent); background: rgba(110,231,183,.05); }
+  .nav-item .icon { font-size: 15px; width: 18px; text-align: center; }
+
+  .sidebar-footer {
+    padding: 20px 24px 0;
+    border-top: 1px solid var(--border);
+  }
+  .user-pill {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 12px; color: var(--subtle);
+  }
+  .user-pill .avatar {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--blue));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: #000;
+  }
+  .user-pill .name { font-weight: 600; color: var(--text); font-size: 13px; }
+  .user-pill .role { color: var(--accent); font-family: var(--font-mono); font-size: 11px; }
+
+  #main {
+    margin-left: 220px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    position: sticky; top: 0; z-index: 5;
+    background: rgba(12,14,20,.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 32px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .page-title { font-size: 18px; font-weight: 700; color: #fff; }
+  .header-actions { display: flex; gap: 10px; }
+
+  .content { padding: 32px; flex: 1; }
+
+  /* ── Auth screen ─────────────────────────────── */
+  #auth-screen {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh; background: var(--bg);
+  }
+  .auth-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 48px 40px;
+    width: 380px;
+  }
+  .auth-card h1 { font-size: 26px; font-weight: 800; color: #fff; margin-bottom: 6px; }
+  .auth-card p { color: var(--subtle); margin-bottom: 32px; font-size: 13px; }
+
+  /* ── Form elements ───────────────────────────── */
+  .field { margin-bottom: 16px; }
+  label { display: block; font-size: 12px; font-weight: 600; color: var(--subtle); margin-bottom: 6px; letter-spacing: 0.5px; text-transform: uppercase; }
+  input, select, textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: var(--font-ui);
+    font-size: 14px;
+    padding: 10px 14px;
+    outline: none;
+    transition: border-color .15s;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+  select option { background: var(--surface); }
+
+  /* ── Buttons ─────────────────────────────────── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    border: none; border-radius: var(--radius);
+    padding: 9px 18px;
+    font-family: var(--font-ui); font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: all .15s; letter-spacing: 0.2px;
+  }
+  .btn-primary { background: var(--accent); color: #000; }
+  .btn-primary:hover { background: #4dd4a0; transform: translateY(-1px); }
+  .btn-ghost { background: transparent; color: var(--subtle); border: 1px solid var(--border); }
+  .btn-ghost:hover { color: var(--text); border-color: var(--muted); }
+  .btn-danger { background: rgba(248,113,113,.12); color: var(--red); border: 1px solid rgba(248,113,113,.2); }
+  .btn-danger:hover { background: rgba(248,113,113,.2); }
+  .btn-sm { padding: 5px 12px; font-size: 12px; }
+  .btn-full { width: 100%; justify-content: center; }
+
+  /* ── Cards ───────────────────────────────────── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+  }
+  .card-title {
+    font-size: 11px; font-weight: 700; letter-spacing: 1px;
+    text-transform: uppercase; color: var(--subtle); margin-bottom: 16px;
+  }
+
+  /* ── Stat cards ──────────────────────────────── */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; }
+  .stat-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--subtle); margin-bottom: 10px; }
+  .stat-value { font-size: 28px; font-weight: 800; color: #fff; font-family: var(--font-mono); letter-spacing: -1px; }
+  .stat-value.positive { color: var(--accent); }
+  .stat-value.negative { color: var(--red); }
+  .stat-badge { display: inline-block; margin-top: 8px; font-size: 11px; font-family: var(--font-mono); padding: 2px 8px; border-radius: 20px; }
+  .badge-green { background: rgba(110,231,183,.1); color: var(--accent); }
+  .badge-red { background: rgba(248,113,113,.1); color: var(--red); }
+  .badge-blue { background: rgba(96,165,250,.1); color: var(--blue); }
+  .badge-purple { background: rgba(167,139,250,.1); color: var(--purple); }
+
+  /* ── Tables ──────────────────────────────────── */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    text-align: left; font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.8px;
+    color: var(--subtle); padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  td { padding: 12px 16px; border-bottom: 1px solid rgba(30,34,48,.6); font-size: 13px; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,.02); }
+
+  .tag {
+    display: inline-block; padding: 2px 10px; border-radius: 20px;
+    font-size: 11px; font-family: var(--font-mono); font-weight: 500;
+  }
+  .tag-income { background: rgba(110,231,183,.1); color: var(--accent); }
+  .tag-expense { background: rgba(248,113,113,.1); color: var(--red); }
+  .tag-admin { background: rgba(167,139,250,.1); color: var(--purple); }
+  .tag-analyst { background: rgba(96,165,250,.1); color: var(--blue); }
+  .tag-viewer { background: rgba(251,191,36,.1); color: var(--amber); }
+  .tag-active { background: rgba(110,231,183,.1); color: var(--accent); }
+  .tag-inactive { background: rgba(248,113,113,.1); color: var(--red); }
+
+  .amount-pos { color: var(--accent); font-family: var(--font-mono); font-weight: 500; }
+  .amount-neg { color: var(--red); font-family: var(--font-mono); font-weight: 500; }
+
+  /* ── 2-col grid ──────────────────────────────── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+
+  /* ── Toast ───────────────────────────────────── */
+  #toast {
+    position: fixed; bottom: 24px; right: 24px; z-index: 100;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 12px 18px;
+    font-size: 13px; font-weight: 600;
+    transform: translateY(80px); opacity: 0;
+    transition: all .3s cubic-bezier(.34,1.56,.64,1);
+    max-width: 300px;
+  }
+  #toast.show { transform: translateY(0); opacity: 1; }
+  #toast.success { border-left: 3px solid var(--accent); }
+  #toast.error { border-left: 3px solid var(--red); }
+
+  /* ── Modal ───────────────────────────────────── */
+  .modal-backdrop {
+    display: none; position: fixed; inset: 0; z-index: 50;
+    background: rgba(0,0,0,.6); backdrop-filter: blur(4px);
+    align-items: center; justify-content: center;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 32px; width: 480px; max-width: 95vw;
+    animation: slideUp .25s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } }
+  .modal-title { font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 24px; }
+  .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
+
+  /* ── Misc ────────────────────────────────────── */
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .section-title { font-size: 15px; font-weight: 700; color: #fff; }
+  .empty { text-align: center; padding: 48px; color: var(--subtle); font-size: 13px; }
+  .loading { text-align: center; padding: 32px; color: var(--subtle); }
+
+  /* Pagination */
+  .pagination { display: flex; align-items: center; gap: 8px; margin-top: 16px; justify-content: flex-end; }
+  .page-info { font-size: 12px; color: var(--subtle); font-family: var(--font-mono); }
+
+  /* Filters bar */
+  .filters { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+  .filters input, .filters select { width: auto; flex: 1; min-width: 120px; }
+
+  /* Mini bar chart */
+  .bar-chart { display: flex; align-items: flex-end; gap: 4px; height: 80px; }
+  .bar-group { flex: 1; display: flex; gap: 2px; align-items: flex-end; }
+  .bar { flex: 1; border-radius: 3px 3px 0 0; min-height: 2px; transition: height .4s ease; cursor: pointer; position: relative; }
+  .bar.income { background: var(--accent); opacity: .8; }
+  .bar.expense { background: var(--red); opacity: .7; }
+  .bar:hover { opacity: 1; }
+  .chart-labels { display: flex; gap: 4px; margin-top: 6px; }
+  .chart-label { flex: 1; text-align: center; font-size: 9px; color: var(--subtle); font-family: var(--font-mono); }
+
+  /* Divider */
+  hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+  /* Page visibility */
+  .page { display: none; }
+  .page.active { display: block; }
+</style>
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <h1>Finance<span style="color:var(--accent)">.</span></h1>
+    <p>Sign in to your dashboard</p>
+    <div class="field">
+      <label>Email</label>
+      <input id="login-email" type="email" value="admin@finance.com" placeholder="you@example.com" />
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input id="login-pass" type="password" value="Admin@123" placeholder="••••••••" />
+    </div>
+    <div id="login-err" style="color:var(--red);font-size:12px;margin-bottom:12px;display:none;"></div>
+    <button class="btn btn-primary btn-full" onclick="doLogin()">Sign In</button>
+    <p style="text-align:center;margin-top:16px;font-size:12px;color:var(--subtle);">
+      Default: admin@finance.com / Admin@123
+    </p>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app" style="display:none;">
+  <aside id="sidebar">
+    <div class="logo">Finance<span>.</span></div>
+    <nav>
+      <div class="nav-item active" onclick="nav('overview')" data-page="overview">
+        <span class="icon">◈</span> Overview
+      </div>
+      <div class="nav-item" onclick="nav('records')" data-page="records">
+        <span class="icon">≡</span> Records
+      </div>
+      <div class="nav-item" onclick="nav('users')" data-page="users" id="nav-users" style="display:none;">
+        <span class="icon">◎</span> Users
+      </div>
+      <div class="nav-item" onclick="nav('audit')" data-page="audit" id="nav-audit" style="display:none;">
+        <span class="icon">◷</span> Audit Log
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-pill">
+        <div class="avatar" id="user-avatar">A</div>
+        <div>
+          <div class="name" id="user-name">—</div>
+          <div class="role" id="user-role">—</div>
+        </div>
+      </div>
+      <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:12px;" onclick="logout()">Sign out</button>
+    </div>
+  </aside>
+
+  <div id="main">
+    <header>
+      <div class="page-title" id="header-title">Overview</div>
+      <div class="header-actions" id="header-actions"></div>
+    </header>
+
+    <div class="content">
+
+      <!-- OVERVIEW -->
+      <div class="page active" id="page-overview">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">Total Income</div>
+            <div class="stat-value positive" id="stat-income">—</div>
+            <div class="stat-badge badge-green">income</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Total Expenses</div>
+            <div class="stat-value negative" id="stat-expense">—</div>
+            <div class="stat-badge badge-red">expense</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Net Balance</div>
+            <div class="stat-value" id="stat-net">—</div>
+            <div class="stat-badge badge-blue">net</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Total Records</div>
+            <div class="stat-value" id="stat-count">—</div>
+            <div class="stat-badge badge-purple">records</div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">Monthly Trend (last 6 months)</div>
+            <div id="chart-container">
+              <div class="bar-chart" id="bar-chart"></div>
+              <div class="chart-labels" id="chart-labels"></div>
+            </div>
+            <div style="display:flex;gap:16px;margin-top:12px;">
+              <span style="font-size:11px;color:var(--accent);">■ Income</span>
+              <span style="font-size:11px;color:var(--red);">■ Expense</span>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">By Category</div>
+            <div id="category-list"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="section-header">
+            <div class="section-title">Recent Activity</div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th><th>Category</th><th>Type</th><th>Amount</th><th>Notes</th><th>By</th>
+                </tr>
+              </thead>
+              <tbody id="recent-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- RECORDS -->
+      <div class="page" id="page-records">
+        <div class="filters">
+          <select id="f-type" onchange="loadRecords(1)">
+            <option value="">All types</option>
+            <option value="income">Income</option>
+            <option value="expense">Expense</option>
+          </select>
+          <input id="f-cat" placeholder="Category…" oninput="loadRecords(1)" />
+          <input id="f-from" type="date" onchange="loadRecords(1)" />
+          <input id="f-to" type="date" onchange="loadRecords(1)" />
+          <input id="f-search" placeholder="Search…" oninput="loadRecords(1)" />
+        </div>
+        <div class="card">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>ID</th><th>Date</th><th>Category</th><th>Type</th><th>Amount</th><th>Notes</th><th>By</th><th></th></tr>
+              </thead>
+              <tbody id="records-tbody"></tbody>
+            </table>
+          </div>
+          <div class="pagination" id="records-pagination"></div>
+        </div>
+      </div>
+
+      <!-- USERS -->
+      <div class="page" id="page-users">
+        <div class="filters">
+          <select id="u-role" onchange="loadUsers(1)">
+            <option value="">All roles</option>
+            <option value="admin">Admin</option>
+            <option value="analyst">Analyst</option>
+            <option value="viewer">Viewer</option>
+          </select>
+          <select id="u-status" onchange="loadUsers(1)">
+            <option value="">All status</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+        <div class="card">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>ID</th><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Created</th><th></th></tr>
+              </thead>
+              <tbody id="users-tbody"></tbody>
+            </table>
+          </div>
+          <div class="pagination" id="users-pagination"></div>
+        </div>
+      </div>
+
+      <!-- AUDIT -->
+      <div class="page" id="page-audit">
+        <div class="card">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Time</th><th>User</th><th>Role</th><th>Action</th><th>Entity</th><th>Entity ID</th><th>IP</th></tr>
+              </thead>
+              <tbody id="audit-tbody"></tbody>
+            </table>
+          </div>
+          <div class="pagination" id="audit-pagination"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-backdrop" id="modal-record">
+  <div class="modal">
+    <div class="modal-title" id="record-modal-title">New Record</div>
+    <input type="hidden" id="record-id" />
+    <div class="field"><label>Amount</label><input id="r-amount" type="number" step="0.01" placeholder="0.00" /></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="field">
+        <label>Type</label>
+        <select id="r-type"><option value="income">Income</option><option value="expense">Expense</option></select>
+      </div>
+      <div class="field"><label>Date</label><input id="r-date" type="date" /></div>
+    </div>
+    <div class="field"><label>Category</label><input id="r-cat" placeholder="e.g. Salary, Rent…" /></div>
+    <div class="field"><label>Notes</label><input id="r-notes" placeholder="Optional…" /></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-record')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveRecord()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-user">
+  <div class="modal">
+    <div class="modal-title">New User</div>
+    <div class="field"><label>Name</label><input id="u-name" placeholder="Full name" /></div>
+    <div class="field"><label>Email</label><input id="u-email" type="email" placeholder="user@example.com" /></div>
+    <div class="field"><label>Password</label><input id="u-password" type="password" placeholder="min 6 chars" /></div>
+    <div class="field"><label>Role</label>
+      <select id="u-role-sel"><option value="viewer">Viewer</option><option value="analyst">Analyst</option><option value="admin">Admin</option></select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-user')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveUser()">Create User</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const API = 'http://localhost:3000';
+let token = localStorage.getItem('fin_token');
+let currentUser = null;
+let currentPage = 'overview';
+
+// ── Auth ─────────────────────────────────────────
+async function doLogin() {
+  const email = document.getElementById('login-email').value;
+  const pass  = document.getElementById('login-pass').value;
+  const err   = document.getElementById('login-err');
+  err.style.display = 'none';
+  try {
+    const res = await api('POST', '/api/auth/login', { email, password: pass }, false);
+    token = res.token;
+    localStorage.setItem('fin_token', token);
+    currentUser = res.user;
+    bootApp();
+  } catch(e) {
+    err.textContent = e.message || 'Login failed';
+    err.style.display = 'block';
+  }
+}
+
+function logout() {
+  localStorage.removeItem('fin_token');
+  token = null;
+  currentUser = null;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('auth-screen').style.display = 'flex';
+}
+
+async function bootApp() {
+  if (!token) return;
+  try {
+    if (!currentUser) {
+      const res = await api('GET', '/api/auth/me');
+      currentUser = res.user;
+    }
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    document.getElementById('user-name').textContent = currentUser.name;
+    document.getElementById('user-role').textContent = currentUser.role;
+    document.getElementById('user-avatar').textContent = currentUser.name[0].toUpperCase();
+    if (currentUser.role === 'admin') {
+      document.getElementById('nav-users').style.display = 'flex';
+      document.getElementById('nav-audit').style.display = 'flex';
+    }
+    nav('overview');
+  } catch(e) {
+    logout();
+  }
+}
+
+// ── API helper ───────────────────────────────────
+async function api(method, path, body = null, auth = true) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (auth && token) headers['Authorization'] = `Bearer ${token}`;
+  const r = await fetch(API + path, {
+    method,
+    headers,
+    body: body ? JSON.stringify(body) : undefined
+  });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data.error || data.errors?.[0]?.msg || `HTTP ${r.status}`);
+  return data;
+}
+
+// ── Navigation ───────────────────────────────────
+function nav(page) {
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.page === page));
+  document.querySelectorAll('.page').forEach(el => el.classList.toggle('active', el.id === 'page-' + page));
+  currentPage = page;
+  const titles = { overview: 'Overview', records: 'Financial Records', users: 'User Management', audit: 'Audit Log' };
+  document.getElementById('header-title').textContent = titles[page] || page;
+
+  const actions = document.getElementById('header-actions');
+  actions.innerHTML = '';
+
+  if (page === 'records' && ['analyst','admin'].includes(currentUser?.role)) {
+    actions.innerHTML = `<button class="btn btn-primary btn-sm" onclick="openNewRecord()">+ New Record</button>`;
+  }
+  if (page === 'users') {
+    actions.innerHTML = `<button class="btn btn-primary btn-sm" onclick="openModal('modal-user')">+ New User</button>`;
+  }
+
+  if (page === 'overview') loadOverview();
+  if (page === 'records') loadRecords(1);
+  if (page === 'users') loadUsers(1);
+  if (page === 'audit') loadAudit(1);
+}
+
+// ── Overview ─────────────────────────────────────
+async function loadOverview() {
+  try {
+    const [summary, cats, monthly, recent] = await Promise.all([
+      api('GET', '/api/dashboard/summary'),
+      api('GET', '/api/dashboard/categories'),
+      api('GET', '/api/dashboard/trends/monthly'),
+      api('GET', '/api/dashboard/recent?limit=8'),
+    ]);
+
+    const s = summary.summary;
+    document.getElementById('stat-income').textContent = fmt(s.total_income || 0);
+    document.getElementById('stat-expense').textContent = fmt(s.total_expenses || 0);
+    const net = s.net_balance || 0;
+    const netEl = document.getElementById('stat-net');
+    netEl.textContent = fmt(net);
+    netEl.className = 'stat-value ' + (net >= 0 ? 'positive' : 'negative');
+    document.getElementById('stat-count').textContent = s.total_records || 0;
+
+    renderChart(monthly.monthly_trends || []);
+    renderCategories(cats.category_totals || []);
+    renderRecent(recent.recent_activity || []);
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function renderChart(data) {
+  const rows = data.slice(0, 6).reverse();
+  if (!rows.length) return;
+  const maxVal = Math.max(...rows.flatMap(r => [r.income || 0, r.expenses || 0]), 1);
+  const chart = document.getElementById('bar-chart');
+  const labels = document.getElementById('chart-labels');
+  chart.innerHTML = '';
+  labels.innerHTML = '';
+  rows.forEach(r => {
+    const g = document.createElement('div');
+    g.className = 'bar-group';
+    const ih = Math.round(((r.income || 0) / maxVal) * 76) + 4;
+    const eh = Math.round(((r.expenses || 0) / maxVal) * 76) + 4;
+    g.innerHTML = `<div class="bar income" style="height:${ih}px" title="Income: ${fmt(r.income)}"></div>
+                   <div class="bar expense" style="height:${eh}px" title="Expense: ${fmt(r.expenses)}"></div>`;
+    chart.appendChild(g);
+    const l = document.createElement('div');
+    l.className = 'chart-label';
+    l.textContent = (r.month || '').slice(5); // MM
+    labels.appendChild(l);
+  });
+}
+
+function renderCategories(data) {
+  const el = document.getElementById('category-list');
+  if (!data.length) { el.innerHTML = '<div class="empty">No data</div>'; return; }
+  const top = data.slice(0, 6);
+  const max = Math.max(...top.map(r => r.total), 1);
+  el.innerHTML = top.map(r => `
+    <div style="margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:12px;">
+        <span>${r.category} <span class="tag tag-${r.type}" style="font-size:10px;">${r.type}</span></span>
+        <span style="font-family:var(--font-mono);color:var(--text);">${fmt(r.total)}</span>
+      </div>
+      <div style="height:4px;background:var(--border);border-radius:2px;">
+        <div style="height:100%;border-radius:2px;background:${r.type==='income'?'var(--accent)':'var(--red)'};width:${Math.round((r.total/max)*100)}%;"></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderRecent(data) {
+  const tb = document.getElementById('recent-tbody');
+  if (!data.length) { tb.innerHTML = '<tr><td colspan="6" class="empty">No activity yet</td></tr>'; return; }
+  tb.innerHTML = data.map(r => `
+    <tr>
+      <td style="color:var(--subtle);font-family:var(--font-mono);font-size:12px;">${r.date}</td>
+      <td>${r.category}</td>
+      <td><span class="tag tag-${r.type}">${r.type}</span></td>
+      <td class="${r.type==='income'?'amount-pos':'amount-neg'}">${r.type==='income'?'+':'-'}${fmt(r.amount)}</td>
+      <td style="color:var(--subtle);">${r.notes || '—'}</td>
+      <td style="color:var(--subtle);font-size:12px;">${r.created_by}</td>
+    </tr>
+  `).join('');
+}
+
+// ── Records ──────────────────────────────────────
+let recPage = 1;
+async function loadRecords(page = 1) {
+  recPage = page;
+  const type   = document.getElementById('f-type').value;
+  const cat    = document.getElementById('f-cat').value;
+  const from   = document.getElementById('f-from').value;
+  const to     = document.getElementById('f-to').value;
+  const search = document.getElementById('f-search').value;
+  const params = new URLSearchParams({ page, limit: 15 });
+  if (type) params.set('type', type);
+  if (cat) params.set('category', cat);
+  if (from) params.set('from', from);
+  if (to) params.set('to', to);
+  if (search) params.set('search', search);
+
+  try {
+    const { records, meta } = await api('GET', '/api/records?' + params);
+    const tb = document.getElementById('records-tbody');
+    const canEdit = ['analyst','admin'].includes(currentUser?.role);
+    const canDelete = currentUser?.role === 'admin';
+    tb.innerHTML = records.length ? records.map(r => `
+      <tr>
+        <td style="color:var(--subtle);font-family:var(--font-mono);font-size:12px;">#${r.id}</td>
+        <td style="font-family:var(--font-mono);font-size:12px;">${r.date}</td>
+        <td>${r.category}</td>
+        <td><span class="tag tag-${r.type}">${r.type}</span></td>
+        <td class="${r.type==='income'?'amount-pos':'amount-neg'}">${fmt(r.amount)}</td>
+        <td style="color:var(--subtle);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.notes||'—'}</td>
+        <td style="color:var(--subtle);font-size:12px;">${r.created_by_name}</td>
+        <td style="white-space:nowrap;">
+          ${canEdit ? `<button class="btn btn-ghost btn-sm" onclick="openEditRecord(${r.id},${r.amount},'${r.type}','${r.category}','${r.date}','${(r.notes||'').replace(/'/g,"\\'")}')">Edit</button>` : ''}
+          ${canDelete ? `<button class="btn btn-danger btn-sm" onclick="deleteRecord(${r.id})">Del</button>` : ''}
+        </td>
+      </tr>
+    `).join('') : `<tr><td colspan="8" class="empty">No records found</td></tr>`;
+    renderPagination('records-pagination', meta, loadRecords);
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function openNewRecord() {
+  document.getElementById('record-modal-title').textContent = 'New Record';
+  document.getElementById('record-id').value = '';
+  ['r-amount','r-cat','r-notes'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('r-type').value = 'income';
+  document.getElementById('r-date').value = new Date().toISOString().slice(0,10);
+  openModal('modal-record');
+}
+
+function openEditRecord(id, amount, type, cat, date, notes) {
+  document.getElementById('record-modal-title').textContent = 'Edit Record';
+  document.getElementById('record-id').value = id;
+  document.getElementById('r-amount').value = amount;
+  document.getElementById('r-type').value = type;
+  document.getElementById('r-cat').value = cat;
+  document.getElementById('r-date').value = date;
+  document.getElementById('r-notes').value = notes;
+  openModal('modal-record');
+}
+
+async function saveRecord() {
+  const id = document.getElementById('record-id').value;
+  const body = {
+    amount: parseFloat(document.getElementById('r-amount').value),
+    type: document.getElementById('r-type').value,
+    category: document.getElementById('r-cat').value,
+    date: document.getElementById('r-date').value,
+    notes: document.getElementById('r-notes').value,
+  };
+  try {
+    if (id) await api('PATCH', '/api/records/' + id, body);
+    else await api('POST', '/api/records', body);
+    closeModal('modal-record');
+    toast(id ? 'Record updated' : 'Record created', 'success');
+    loadRecords(recPage);
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function deleteRecord(id) {
+  if (!confirm('Soft-delete this record?')) return;
+  try {
+    await api('DELETE', '/api/records/' + id);
+    toast('Record deleted', 'success');
+    loadRecords(recPage);
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ── Users ─────────────────────────────────────────
+let usrPage = 1;
+async function loadUsers(page = 1) {
+  usrPage = page;
+  const role   = document.getElementById('u-role').value;
+  const status = document.getElementById('u-status').value;
+  const params = new URLSearchParams({ page, limit: 15 });
+  if (role) params.set('role', role);
+  if (status) params.set('status', status);
+  try {
+    const { users, meta } = await api('GET', '/api/users?' + params);
+    const tb = document.getElementById('users-tbody');
+    tb.innerHTML = users.map(u => `
+      <tr>
+        <td style="color:var(--subtle);font-family:var(--font-mono);font-size:12px;">#${u.id}</td>
+        <td>${u.name}</td>
+        <td style="color:var(--subtle);font-size:13px;">${u.email}</td>
+        <td><span class="tag tag-${u.role}">${u.role}</span></td>
+        <td><span class="tag tag-${u.status}">${u.status}</span></td>
+        <td style="color:var(--subtle);font-size:12px;font-family:var(--font-mono);">${u.created_at?.slice(0,10)}</td>
+        <td>
+          ${u.id !== currentUser?.id ? `<button class="btn btn-danger btn-sm" onclick="deleteUser(${u.id})">Del</button>` : ''}
+        </td>
+      </tr>
+    `).join('');
+    renderPagination('users-pagination', meta, loadUsers);
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function saveUser() {
+  const body = {
+    name: document.getElementById('u-name').value,
+    email: document.getElementById('u-email').value,
+    password: document.getElementById('u-password').value,
+    role: document.getElementById('u-role-sel').value,
+  };
+  try {
+    await api('POST', '/api/users', body);
+    closeModal('modal-user');
+    toast('User created', 'success');
+    loadUsers(usrPage);
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function deleteUser(id) {
+  if (!confirm('Permanently delete this user?')) return;
+  try {
+    await api('DELETE', '/api/users/' + id);
+    toast('User deleted', 'success');
+    loadUsers(usrPage);
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ── Audit ─────────────────────────────────────────
+async function loadAudit(page = 1) {
+  try {
+    const { audit_logs, meta } = await api('GET', `/api/audit?page=${page}&limit=20`);
+    const tb = document.getElementById('audit-tbody');
+    tb.innerHTML = audit_logs.map(l => `
+      <tr>
+        <td style="font-family:var(--font-mono);font-size:11px;color:var(--subtle);">${l.created_at?.slice(0,19)}</td>
+        <td style="font-size:12px;">${l.user_email || '—'}</td>
+        <td>${l.user_role ? `<span class="tag tag-${l.user_role}">${l.user_role}</span>` : '—'}</td>
+        <td style="font-family:var(--font-mono);font-size:12px;color:var(--amber);">${l.action}</td>
+        <td style="color:var(--subtle);font-size:12px;">${l.entity}</td>
+        <td style="font-family:var(--font-mono);font-size:12px;color:var(--subtle);">${l.entity_id || '—'}</td>
+        <td style="font-family:var(--font-mono);font-size:11px;color:var(--muted);">${l.ip || '—'}</td>
+      </tr>
+    `).join('');
+    renderPagination('audit-pagination', meta, loadAudit);
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ── Helpers ───────────────────────────────────────
+function fmt(n) {
+  return '$' + (n || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
+
+function renderPagination(containerId, meta, loadFn) {
+  const el = document.getElementById(containerId);
+  if (!meta || meta.pages <= 1) { el.innerHTML = ''; return; }
+  el.innerHTML = `
+    <span class="page-info">Page ${meta.page} of ${meta.pages} (${meta.total} total)</span>
+    <button class="btn btn-ghost btn-sm" ${meta.page <= 1 ? 'disabled' : ''} onclick="${loadFn.name}(${meta.page - 1})">← Prev</button>
+    <button class="btn btn-ghost btn-sm" ${meta.page >= meta.pages ? 'disabled' : ''} onclick="${loadFn.name}(${meta.page + 1})">Next →</button>
+  `;
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+let toastTimer;
+function toast(msg, type = 'success') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `show ${type}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.className = '', 3000);
+}
+
+// Click outside modal to close
+document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+  backdrop.addEventListener('click', e => { if (e.target === backdrop) backdrop.classList.remove('open'); });
+});
+
+// Enter to login
+document.getElementById('login-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+// Boot
+if (token) bootApp();
+</script>
+</body>
+</html>
